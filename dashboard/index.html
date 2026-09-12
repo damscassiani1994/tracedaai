@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -25,8 +25,15 @@
     padding: 24px 16px 60px;
   }
   .wrap { max-width: 1100px; margin: 0 auto; }
+  .header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
   h1 { font-size: 20px; margin: 0 0 4px; }
   .sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .lang-switch { display: flex; gap: 6px; flex-shrink: 0; padding-top: 2px; }
+  .lang-btn {
+    font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px;
+    border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer;
+  }
+  .lang-btn.active { color: var(--accent); border-color: var(--accent); }
   .panel {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -108,68 +115,103 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>🖥️ TraceDaAI — AI Control Center</h1>
-    <div class="sub">Fase 1 · MCP Firewall + Claude Code hooks · actualiza cada 3s</div>
+    <div class="header-row">
+      <div>
+        <h1>🖥️ TraceDaAI — AI Control Center</h1>
+        <div class="sub" id="hdr-sub"></div>
+      </div>
+      <div class="lang-switch">
+        <button class="lang-btn" id="lang-en" data-lang="en">EN</button>
+        <button class="lang-btn" id="lang-es" data-lang="es">ES</button>
+      </div>
+    </div>
 
     <div class="panel">
-      <h2>Agentes</h2>
+      <h2 data-i18n="agentsPanel"></h2>
       <table id="summary-table">
         <thead>
-          <tr><th></th><th>Agente</th><th>Eventos</th><th>Bloqueados</th><th>Pendientes (ask)</th><th>Riesgo</th><th>CPU</th><th>RAM</th><th>Última actividad</th></tr>
+          <tr>
+            <th></th>
+            <th data-i18n="thAgent"></th>
+            <th data-i18n="thEvents"></th>
+            <th data-i18n="thBlocked"></th>
+            <th data-i18n="thPending"></th>
+            <th data-i18n="thRisk"></th>
+            <th data-i18n="thCpu"></th>
+            <th data-i18n="thRam"></th>
+            <th data-i18n="thLastActivity"></th>
+          </tr>
         </thead>
         <tbody></tbody>
       </table>
-      <div class="empty" id="summary-empty" style="display:none;">Sin actividad registrada todavía. Configura el proxy MCP o los hooks de Claude Code para empezar a ver eventos.</div>
+      <div class="empty" id="summary-empty" style="display:none;" data-i18n="summaryEmpty"></div>
     </div>
 
     <div class="panel">
-      <h2>Aprobaciones pendientes</h2>
+      <h2 data-i18n="approvalsPanel"></h2>
       <table id="approvals-table">
-        <thead><tr><th>Hora</th><th>Herramienta</th><th>Objetivo</th><th></th></tr></thead>
+        <thead>
+          <tr>
+            <th data-i18n="thTime"></th>
+            <th data-i18n="thTool"></th>
+            <th data-i18n="thTarget"></th>
+            <th></th>
+          </tr>
+        </thead>
         <tbody></tbody>
       </table>
-      <div class="empty" id="approvals-empty" style="display:none;">No hay aprobaciones pendientes.</div>
+      <div class="empty" id="approvals-empty" style="display:none;" data-i18n="approvalsEmpty"></div>
     </div>
 
     <div class="panel">
-      <h2>Actividad reciente</h2>
+      <h2 data-i18n="eventsPanel"></h2>
       <table id="events-table">
-        <thead><tr><th>Hora</th><th>Origen</th><th>Agente</th><th>Herramienta</th><th>Objetivo</th><th>Decisión</th><th>Riesgo</th></tr></thead>
+        <thead>
+          <tr>
+            <th data-i18n="thTime"></th>
+            <th data-i18n="thSource"></th>
+            <th data-i18n="thAgent"></th>
+            <th data-i18n="thTool"></th>
+            <th data-i18n="thTarget"></th>
+            <th data-i18n="thDecision"></th>
+            <th data-i18n="thRisk"></th>
+          </tr>
+        </thead>
         <tbody></tbody>
       </table>
-      <div class="empty" id="events-empty" style="display:none;">Sin eventos todavía.</div>
+      <div class="empty" id="events-empty" style="display:none;" data-i18n="eventsEmpty"></div>
     </div>
   </div>
 
   <div class="modal-overlay" id="agent-modal" hidden>
     <div class="modal-card">
       <div class="modal-header">
-        <h2 id="agent-modal-title">AGENTE</h2>
-        <button class="modal-close" id="agent-modal-close" aria-label="Cerrar">✕</button>
+        <h2 id="agent-modal-title">AGENT</h2>
+        <button class="modal-close" id="agent-modal-close" data-i18n-aria="close">✕</button>
       </div>
 
       <div class="modal-section">
-        <h3>Permisos</h3>
+        <h3 data-i18n="modalPermissions"></h3>
         <ul class="perm-list" id="agent-modal-perms"></ul>
       </div>
 
       <div class="modal-section">
-        <h3>Recursos</h3>
+        <h3 data-i18n="modalResources"></h3>
         <div id="agent-modal-resources"></div>
       </div>
 
       <div class="modal-section">
-        <h3>Actividad</h3>
+        <h3 data-i18n="modalActivity"></h3>
         <div class="activity-list" id="agent-modal-activity"></div>
       </div>
 
       <div class="modal-section">
-        <h3>Advertencias</h3>
+        <h3 data-i18n="modalWarnings"></h3>
         <ul class="warn-list" id="agent-modal-warnings"></ul>
       </div>
 
       <div class="modal-section" style="margin-bottom:0;">
-        <h3>Riesgo</h3>
+        <h3 data-i18n="modalRisk"></h3>
         <div class="risk-bar-track" id="agent-modal-risk-bar"></div>
         <div class="risk-label" id="agent-modal-risk-label"></div>
       </div>
@@ -179,17 +221,120 @@
 <script>
 const RISK_ORDER = { high: 3, medium: 2, low: 1 };
 
+const I18N = {
+  en: {
+    subtitle: "Phase 1 · MCP Firewall + Claude Code hooks · refreshes every 3s",
+    agentsPanel: "Agents",
+    thAgent: "Agent", thEvents: "Events", thBlocked: "Blocked", thPending: "Pending (ask)",
+    thRisk: "Risk", thCpu: "CPU", thRam: "RAM", thLastActivity: "Last activity",
+    summaryEmpty: "No activity recorded yet. Set up the MCP proxy or the Claude Code hooks to start seeing events.",
+    approvalsPanel: "Pending approvals",
+    thTime: "Time", thTool: "Tool", thTarget: "Target",
+    approveBtn: "Approve", denyBtn: "Deny",
+    approvalsEmpty: "No pending approvals.",
+    eventsPanel: "Recent activity",
+    thSource: "Source", thDecision: "Decision",
+    eventsEmpty: "No events yet.",
+    close: "Close",
+    modalPermissions: "Permissions", modalResources: "Resources", modalActivity: "Activity",
+    modalWarnings: "Warnings", modalRisk: "Risk",
+    permRead: "Read files", permWrite: "Write files", permExec: "Execute commands",
+    permGit: "Git access", permNet: "Internet access", permEnv: "Environment variable access",
+    resCpu: "CPU", resRam: "RAM", resGpu: "GPU", resNet: "Network ↓ / ↑",
+    notMeasured: "N/A (not measured yet)", phase3Note: "N/A (roadmap Phase 3)",
+    noActivity: "No activity recorded.", noWarnings: "No warnings.",
+    warnBlocked: "Blocked", warnPending: "Pending",
+    riskLow: "LOW", riskMedium: "MEDIUM", riskHigh: "HIGH",
+    decisionAllow: "allow", decisionAsk: "ask", decisionBlock: "block",
+    decisionCompleted: "completed", decisionError: "error",
+  },
+  es: {
+    subtitle: "Fase 1 · MCP Firewall + hooks de Claude Code · actualiza cada 3s",
+    agentsPanel: "Agentes",
+    thAgent: "Agente", thEvents: "Eventos", thBlocked: "Bloqueados", thPending: "Pendientes (ask)",
+    thRisk: "Riesgo", thCpu: "CPU", thRam: "RAM", thLastActivity: "Última actividad",
+    summaryEmpty: "Sin actividad registrada todavía. Configura el proxy MCP o los hooks de Claude Code para empezar a ver eventos.",
+    approvalsPanel: "Aprobaciones pendientes",
+    thTime: "Hora", thTool: "Herramienta", thTarget: "Objetivo",
+    approveBtn: "Aprobar", denyBtn: "Denegar",
+    approvalsEmpty: "No hay aprobaciones pendientes.",
+    eventsPanel: "Actividad reciente",
+    thSource: "Origen", thDecision: "Decisión",
+    eventsEmpty: "Sin eventos todavía.",
+    close: "Cerrar",
+    modalPermissions: "Permisos", modalResources: "Recursos", modalActivity: "Actividad",
+    modalWarnings: "Advertencias", modalRisk: "Riesgo",
+    permRead: "Leer archivos", permWrite: "Escribir archivos", permExec: "Ejecutar comandos",
+    permGit: "Acceso a Git", permNet: "Acceso a Internet", permEnv: "Acceso a variables de entorno",
+    resCpu: "CPU", resRam: "RAM", resGpu: "GPU", resNet: "Red ↓ / ↑",
+    notMeasured: "N/D (no medido aún)", phase3Note: "N/D (Fase 3 del roadmap)",
+    noActivity: "Sin actividad registrada.", noWarnings: "Sin advertencias.",
+    warnBlocked: "Bloqueado", warnPending: "Pendiente",
+    riskLow: "BAJO", riskMedium: "MEDIO", riskHigh: "ALTO",
+    decisionAllow: "permitido", decisionAsk: "preguntar", decisionBlock: "bloqueado",
+    decisionCompleted: "completado", decisionError: "error",
+  },
+};
+
 // Heuristic mapping from observed tool_name/target text to a human capability
 // label. Inferred from what this agent has actually done, not assumed.
 const PERMISSION_RULES = [
-  { key: "read", label: "Leer archivos", match: e => /read|grep|glob/i.test(e.tool_name || "") },
-  { key: "write", label: "Escribir archivos", match: e => /write|edit/i.test(e.tool_name || "") },
-  { key: "exec", label: "Ejecutar comandos", match: e => /bash|exec|shell|command/i.test(e.tool_name || "") },
-  { key: "git", label: "Acceso a Git", match: e => /git\s/i.test(e.target || "") || /git/i.test(e.tool_name || "") },
-  { key: "net", label: "Acceso a Internet", match: e => /fetch|web|http/i.test(e.tool_name || "") || /https?:\/\//i.test(e.target || "") },
-  { key: "env", label: "Acceso a variables de entorno", warn: true,
+  { key: "read", labelKey: "permRead", match: e => /read|grep|glob/i.test(e.tool_name || "") },
+  { key: "write", labelKey: "permWrite", match: e => /write|edit/i.test(e.tool_name || "") },
+  { key: "exec", labelKey: "permExec", match: e => /bash|exec|shell|command/i.test(e.tool_name || "") },
+  { key: "git", labelKey: "permGit", match: e => /git\s/i.test(e.target || "") || /git/i.test(e.tool_name || "") },
+  { key: "net", labelKey: "permNet", match: e => /fetch|web|http/i.test(e.tool_name || "") || /https?:\/\//i.test(e.target || "") },
+  { key: "env", labelKey: "permEnv", warn: true,
     match: e => /\.env|\.aws\/credentials|id_rsa|id_ed25519|\.ssh\//i.test(e.target || "") },
 ];
+
+const RISK_LABEL_KEYS = { high: "riskHigh", medium: "riskMedium", low: "riskLow" };
+const DECISION_LABEL_KEYS = {
+  allow: "decisionAllow", ask: "decisionAsk", block: "decisionBlock",
+  completed: "decisionCompleted", error: "decisionError",
+};
+
+let currentLang = "en";
+try {
+  const saved = localStorage.getItem("tracedaai_lang");
+  if (saved === "en" || saved === "es") currentLang = saved;
+} catch (e) { /* localStorage unavailable, default to English */ }
+
+function t(key) {
+  return I18N[currentLang][key] || key;
+}
+function riskText(riskKey) {
+  return t(RISK_LABEL_KEYS[riskKey] || riskKey);
+}
+function decisionText(decisionKey) {
+  return t(DECISION_LABEL_KEYS[decisionKey] || decisionKey);
+}
+
+function applyStaticI18n() {
+  document.documentElement.lang = currentLang;
+  document.getElementById("hdr-sub").textContent = t("subtitle");
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-aria]").forEach(el => {
+    el.setAttribute("aria-label", t(el.dataset.i18nAria));
+  });
+  document.getElementById("lang-en").classList.toggle("active", currentLang === "en");
+  document.getElementById("lang-es").classList.toggle("active", currentLang === "es");
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  try { localStorage.setItem("tracedaai_lang", lang); } catch (e) { /* ignore */ }
+  applyStaticI18n();
+  refreshAll();
+  if (openModalState) {
+    openAgentDetail(openModalState.agent, openModalState.riskLabel, openModalState.riskScore);
+  }
+}
+
+document.getElementById("lang-en").addEventListener("click", () => setLang("en"));
+document.getElementById("lang-es").addEventListener("click", () => setLang("es"));
 
 function fmtTime(ts) {
   return new Date(ts * 1000).toLocaleTimeString();
@@ -204,6 +349,7 @@ function badge(text, cls) {
 }
 
 let latestProcesses = [];
+let openModalState = null;
 
 async function refreshSummary() {
   const [summary, processes] = await Promise.all([
@@ -231,7 +377,7 @@ async function refreshSummary() {
       <td>${row.total_events}</td>
       <td>${row.blocked || 0}</td>
       <td>${row.asked || 0}</td>
-      <td>${badge(riskLabel.toUpperCase(), riskLabel)}</td>
+      <td>${badge(riskText(riskLabel), riskLabel)}</td>
       <td>${proc ? proc.cpu.toFixed(0) + '%' : '-'}</td>
       <td>${proc ? fmtBytes(proc.rss) : '-'}</td>
       <td>${fmtTime(row.last_seen)}</td>
@@ -253,8 +399,8 @@ async function refreshApprovals() {
       <td>${a.tool_name || '-'}</td>
       <td class="target">${a.target || '-'}</td>
       <td>
-        <button class="approve-btn" data-id="${a.id}" data-action="approve">Aprobar</button>
-        <button class="deny-btn" data-id="${a.id}" data-action="deny">Denegar</button>
+        <button class="approve-btn" data-id="${a.id}" data-action="approve">${t('approveBtn')}</button>
+        <button class="deny-btn" data-id="${a.id}" data-action="deny">${t('denyBtn')}</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -281,8 +427,8 @@ async function refreshEvents() {
       <td>${e.agent || '-'}</td>
       <td>${e.tool_name || '-'}</td>
       <td class="target">${e.target || '-'}</td>
-      <td>${badge(e.decision, e.decision)}</td>
-      <td>${badge(e.risk, e.risk)}</td>
+      <td>${badge(decisionText(e.decision), e.decision)}</td>
+      <td>${badge(riskText(e.risk), e.risk)}</td>
     `;
     tbody.appendChild(tr);
   }
@@ -298,6 +444,8 @@ function verbFor(e) {
 }
 
 async function openAgentDetail(agent, riskLabel, riskScore) {
+  openModalState = { agent, riskLabel, riskScore };
+
   // Pull a larger, agent-specific slice so capability/warning detection isn't
   // limited by the 100-row window the main activity table shows.
   const allEvents = await fetch('/api/events?limit=500').then(r => r.json());
@@ -307,32 +455,33 @@ async function openAgentDetail(agent, riskLabel, riskScore) {
 
   const permsEl = document.getElementById('agent-modal-perms');
   permsEl.innerHTML = PERMISSION_RULES.map(rule => {
+    const label = t(rule.labelKey);
     const seen = events.some(rule.match);
-    if (!seen) return `<li class="perm-none">–&nbsp;&nbsp;${rule.label}</li>`;
-    if (rule.warn) return `<li class="perm-warn">⚠&nbsp;&nbsp;${rule.label}</li>`;
-    return `<li class="perm-ok">✓&nbsp;&nbsp;${rule.label}</li>`;
+    if (!seen) return `<li class="perm-none">–&nbsp;&nbsp;${label}</li>`;
+    if (rule.warn) return `<li class="perm-warn">⚠&nbsp;&nbsp;${label}</li>`;
+    return `<li class="perm-ok">✓&nbsp;&nbsp;${label}</li>`;
   }).join('');
 
   const procs = latestProcesses.filter(p => p.agent === agent);
   const cpu = procs.reduce((s, p) => s + (p.cpu_percent || 0), 0);
   const rss = procs.reduce((s, p) => s + (p.rss_bytes || 0), 0);
   document.getElementById('agent-modal-resources').innerHTML = `
-    <div class="res-row"><span>CPU</span><span class="res-value">${procs.length ? cpu.toFixed(0) + '%' : '–'}</span></div>
-    <div class="res-row"><span>RAM</span><span class="res-value">${procs.length ? fmtBytes(rss) : '–'}</span></div>
-    <div class="res-row"><span>GPU</span><span class="res-value res-note">N/D (no medido aún)</span></div>
-    <div class="res-row"><span>RED ↓ / ↑</span><span class="res-value res-note">N/D (Fase 3 del roadmap)</span></div>
+    <div class="res-row"><span>${t('resCpu')}</span><span class="res-value">${procs.length ? cpu.toFixed(0) + '%' : '–'}</span></div>
+    <div class="res-row"><span>${t('resRam')}</span><span class="res-value">${procs.length ? fmtBytes(rss) : '–'}</span></div>
+    <div class="res-row"><span>${t('resGpu')}</span><span class="res-value res-note">${t('notMeasured')}</span></div>
+    <div class="res-row"><span>${t('resNet')}</span><span class="res-value res-note">${t('phase3Note')}</span></div>
   `;
 
   const recent = events.slice(0, 10);
   document.getElementById('agent-modal-activity').innerHTML = recent.length
     ? recent.map(e => `${fmtTime(e.ts)}  <span class="verb">${verbFor(e)}</span>  ${e.target || e.tool_name || ''}`).join('\n')
-    : '<span class="res-note">Sin actividad registrada.</span>';
+    : `<span class="res-note">${t('noActivity')}</span>`;
 
   const warnEvents = events.filter(e => e.decision === 'block' || e.decision === 'ask');
   const seenReasons = new Set();
   const warnings = [];
   for (const e of warnEvents) {
-    const reason = e.reason || `${e.decision === 'block' ? 'Bloqueado' : 'Pendiente'}: ${e.tool_name || ''}`;
+    const reason = e.reason || `${e.decision === 'block' ? t('warnBlocked') : t('warnPending')}: ${e.tool_name || ''}`;
     if (seenReasons.has(reason)) continue;
     seenReasons.add(reason);
     warnings.push(reason);
@@ -342,7 +491,7 @@ async function openAgentDetail(agent, riskLabel, riskScore) {
   warnListEl.className = warnings.length ? 'warn-list' : 'warn-list none';
   warnListEl.innerHTML = warnings.length
     ? warnings.map(w => `<li>• ${w}</li>`).join('')
-    : '<li>Sin advertencias.</li>';
+    : `<li>${t('noWarnings')}</li>`;
 
   const filled = riskScore >= 3 ? 8 : riskScore === 2 ? 5 : 2;
   const fillClass = `filled-${riskLabel}`;
@@ -350,7 +499,7 @@ async function openAgentDetail(agent, riskLabel, riskScore) {
   track.innerHTML = Array.from({ length: 10 }, (_, i) =>
     `<div class="risk-bar-seg ${i < filled ? fillClass : ''}"></div>`
   ).join('');
-  document.getElementById('agent-modal-risk-label').textContent = riskLabel.toUpperCase();
+  document.getElementById('agent-modal-risk-label').textContent = riskText(riskLabel);
   document.getElementById('agent-modal-risk-label').className = `risk-label ${riskLabel}`;
 
   document.getElementById('agent-modal').hidden = false;
@@ -358,6 +507,7 @@ async function openAgentDetail(agent, riskLabel, riskScore) {
 
 function closeAgentDetail() {
   document.getElementById('agent-modal').hidden = true;
+  openModalState = null;
 }
 
 document.getElementById('agent-modal-close').addEventListener('click', closeAgentDetail);
@@ -376,6 +526,7 @@ async function refreshAll() {
   }
 }
 
+applyStaticI18n();
 refreshAll();
 setInterval(refreshAll, 3000);
 </script>
