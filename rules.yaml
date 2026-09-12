@@ -1,0 +1,51 @@
+# TracedAI policy rules — evaluated top to bottom, first match wins.
+# action: allow | ask | block
+# risk:   low | medium | high
+#
+# match fields (all optional, all must match for the rule to apply):
+#   tool:            glob patterns against the tool/command name (e.g. "Read", "Bash", "*")
+#   path_prefix:     block/ask if any string argument starts with one of these paths
+#   path_contains:   block/ask if any string argument contains one of these substrings
+#   command_contains: substring match against a "command" argument (e.g. Bash tool_input.command)
+#   domain_contains: substring match against a "url"/"domain" argument
+
+rules:
+  - name: "Block reading secrets"
+    match:
+      path_contains: [".env", ".env.local", ".env.production", "id_rsa", "id_ed25519", ".aws/credentials", ".ssh/"]
+    action: block
+    risk: high
+    reason: "Attempted access to a secrets/credentials file"
+
+  - name: "Block sensitive personal folders"
+    match:
+      path_prefix:
+        - "/Users/damaso/Documents/Finanzas"
+        - "/Users/damaso/Documents/Legal"
+    action: block
+    risk: high
+    reason: "Attempted access to a protected personal folder"
+
+  - name: "Ask before elevated privileges"
+    match:
+      tool: ["Bash", "*exec*", "*shell*"]
+      command_contains: ["sudo ", "chmod 777", "rm -rf /"]
+    action: ask
+    risk: high
+    reason: "Command requests elevated privileges or is destructive"
+
+  - name: "Ask before git push / force operations"
+    match:
+      command_contains: ["git push --force", "git reset --hard", "git clean -fd"]
+    action: ask
+    risk: medium
+    reason: "Potentially destructive git operation"
+
+  - name: "Default allow"
+    match: {}
+    action: allow
+    risk: low
+    reason: "No matching restriction"
+
+default_action: allow
+default_risk: low

@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TracedAI — AI Control Center</title>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --panel: #131722;
+    --border: #232838;
+    --text: #e6e9f0;
+    --muted: #8b93a7;
+    --green: #3ddc84;
+    --yellow: #f5c542;
+    --red: #ef4444;
+    --accent: #6f9bff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+  }
+  .panel h2 { font-size: 14px; margin: 0 0 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 480px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 500; }
+  td.target { white-space: normal; word-break: break-word; max-width: 360px; color: var(--muted); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .allow, .completed { background: rgba(61,220,132,.15); color: var(--green); }
+  .ask { background: rgba(245,197,66,.15); color: var(--yellow); }
+  .block, .error, .high { background: rgba(239,68,68,.15); color: var(--red); }
+  .medium { background: rgba(245,197,66,.15); color: var(--yellow); }
+  .low { background: rgba(61,220,132,.15); color: var(--green); }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+  .dot.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .dot.off { background: var(--muted); }
+  .empty { color: var(--muted); font-size: 13px; padding: 8px 0; }
+  button.approve-btn, button.deny-btn {
+    font-size: 11px; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border);
+    background: transparent; color: var(--text); cursor: pointer; margin-right: 6px;
+  }
+  button.approve-btn:hover { border-color: var(--green); color: var(--green); }
+  button.deny-btn:hover { border-color: var(--red); color: var(--red); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🖥️ TracedAI — AI Control Center</h1>
+    <div class="sub">Fase 1 · MCP Firewall + Claude Code hooks · actualiza cada 3s</div>
+
+    <div class="panel">
+      <h2>Agentes</h2>
+      <table id="summary-table">
+        <thead>
+          <tr><th></th><th>Agente</th><th>Eventos</th><th>Bloqueados</th><th>Pendientes (ask)</th><th>Riesgo</th><th>CPU</th><th>RAM</th><th>Última actividad</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="empty" id="summary-empty" style="display:none;">Sin actividad registrada todavía. Configura el proxy MCP o los hooks de Claude Code para empezar a ver eventos.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Aprobaciones pendientes</h2>
+      <table id="approvals-table">
+        <thead><tr><th>Hora</th><th>Herramienta</th><th>Objetivo</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="empty" id="approvals-empty" style="display:none;">No hay aprobaciones pendientes.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Actividad reciente</h2>
+      <table id="events-table">
+        <thead><tr><th>Hora</th><th>Origen</th><th>Agente</th><th>Herramienta</th><th>Objetivo</th><th>Decisión</th><th>Riesgo</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="empty" id="events-empty" style="display:none;">Sin eventos todavía.</div>
+    </div>
+  </div>
+
+<script>
+const RISK_ORDER = { high: 3, medium: 2, low: 1 };
+
+function fmtTime(ts) {
+  return new Date(ts * 1000).toLocaleTimeString();
+}
+function fmtBytes(b) {
+  if (!b) return "-";
+  const mb = b / (1024 * 1024);
+  return mb >= 1024 ? (mb / 1024).toFixed(1) + " GB" : mb.toFixed(0) + " MB";
+}
+function badge(text, cls) {
+  return `<span class="badge ${cls}">${text || "-"}</span>`;
+}
+
+async function refreshSummary() {
+  const [summary, processes] = await Promise.all([
+    fetch('/api/summary').then(r => r.json()),
+    fetch('/api/processes').then(r => r.json()),
+  ]);
+  const procByAgent = {};
+  for (const p of processes) {
+    if (!procByAgent[p.agent]) procByAgent[p.agent] = { cpu: 0, rss: 0 };
+    procByAgent[p.agent].cpu += p.cpu_percent || 0;
+    procByAgent[p.agent].rss += p.rss_bytes || 0;
+  }
+  const tbody = document.querySelector('#summary-table tbody');
+  tbody.innerHTML = '';
+  document.getElementById('summary-empty').style.display = summary.length ? 'none' : 'block';
+  for (const row of summary) {
+    const proc = procByAgent[row.agent];
+    const active = proc !== undefined;
+    const riskLabel = row.risk_score >= 3 ? 'high' : row.risk_score === 2 ? 'medium' : 'low';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="dot ${active ? 'on' : 'off'}"></span></td>
+      <td>${row.agent}</td>
+      <td>${row.total_events}</td>
+      <td>${row.blocked || 0}</td>
+      <td>${row.asked || 0}</td>
+      <td>${badge(riskLabel.toUpperCase(), riskLabel)}</td>
+      <td>${proc ? proc.cpu.toFixed(0) + '%' : '-'}</td>
+      <td>${proc ? fmtBytes(proc.rss) : '-'}</td>
+      <td>${fmtTime(row.last_seen)}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+async function refreshApprovals() {
+  const approvals = await fetch('/api/approvals').then(r => r.json());
+  const tbody = document.querySelector('#approvals-table tbody');
+  tbody.innerHTML = '';
+  document.getElementById('approvals-empty').style.display = approvals.length ? 'none' : 'block';
+  for (const a of approvals) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${fmtTime(a.ts)}</td>
+      <td>${a.tool_name || '-'}</td>
+      <td class="target">${a.target || '-'}</td>
+      <td>
+        <button class="approve-btn" data-id="${a.id}" data-action="approve">Aprobar</button>
+        <button class="deny-btn" data-id="${a.id}" data-action="deny">Denegar</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+  tbody.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await fetch(`/api/approvals/${btn.dataset.id}/${btn.dataset.action}`, { method: 'POST' });
+      refreshApprovals();
+    });
+  });
+}
+
+async function refreshEvents() {
+  const events = await fetch('/api/events?limit=100').then(r => r.json());
+  const tbody = document.querySelector('#events-table tbody');
+  tbody.innerHTML = '';
+  document.getElementById('events-empty').style.display = events.length ? 'none' : 'block';
+  for (const e of events) {
+    if (e.event_type === 'protocol') continue;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${fmtTime(e.ts)}</td>
+      <td>${e.source}</td>
+      <td>${e.agent || '-'}</td>
+      <td>${e.tool_name || '-'}</td>
+      <td class="target">${e.target || '-'}</td>
+      <td>${badge(e.decision, e.decision)}</td>
+      <td>${badge(e.risk, e.risk)}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+async function refreshAll() {
+  try {
+    await Promise.all([refreshSummary(), refreshApprovals(), refreshEvents()]);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+refreshAll();
+setInterval(refreshAll, 3000);
+</script>
+</body>
+</html>
