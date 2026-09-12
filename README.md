@@ -5,6 +5,28 @@ los agentes de IA (Claude Code, Cursor, Copilot, servidores MCP, etc.) en tu
 máquina — archivos, comandos, red — con reglas allow/ask/block, y lo muestra
 en un dashboard único.
 
+## Modelo de seguridad y límites (léelo antes de confiar en esto)
+
+TracedAI Fase 1 es **cooperativo**, no un enforcement real a nivel de sistema
+operativo. Funciona interceptando protocolos que el propio agente respeta
+voluntariamente: los hooks de Claude Code (`PreToolUse`/`PostToolUse`) y el
+tráfico JSON-RPC de MCP que pasa por el proxy. Esto significa que:
+
+- Un proceso que no pase por esos dos puntos (un script arbitrario, un
+  binario que ignore hooks, tráfico MCP que no pase por el proxy) **no está
+  controlado** por TracedAI.
+- No hay verificación de que el propio Claude Code respete la decisión del
+  hook — se apoya en el contrato documentado de `hookSpecificOutput`.
+- El enforcement real e infalible (bloquear a nivel de kernel el acceso a un
+  archivo sin importar qué proceso lo pida) es la Fase 4 del roadmap
+  (Endpoint Security en macOS / eBPF en Linux / ETW+minifilter en Windows) y
+  **todavía no existe**.
+
+En resumen: útil para auditoría y para frenar acciones accidentales o
+descuidadas de agentes que cooperan con el protocolo (que es el caso normal
+de Claude Code, Cursor, servidores MCP, etc.), pero no es una barrera de
+seguridad contra un agente adversarial que decida evadirla.
+
 ## Roadmap
 
 1. **Fase 1 (actual):** MCP Firewall (proxy stdio) + hooks de Claude Code +

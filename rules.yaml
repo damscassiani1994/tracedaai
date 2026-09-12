@@ -19,9 +19,10 @@ rules:
 
   - name: "Block sensitive personal folders"
     match:
+      # Customize these to your own sensitive local folders.
       path_prefix:
-        - "/Users/damaso/Documents/Finanzas"
-        - "/Users/damaso/Documents/Legal"
+        - "/Users/example/Documents/Finance"
+        - "/Users/example/Documents/Legal"
     action: block
     risk: high
     reason: "Attempted access to a protected personal folder"

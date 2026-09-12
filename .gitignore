@@ -6,3 +6,7 @@ data/*.db
 data/*.db-journal
 *.egg-info/
 .DS_Store
+
+# Machine-specific Claude Code hook wiring (hardcodes an absolute venv path) --
+# generate your own locally with `tracedaai init-hooks`.
+.claude/
