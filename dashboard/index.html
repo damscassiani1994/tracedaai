@@ -56,6 +56,52 @@
   }
   button.approve-btn:hover { border-color: var(--green); color: var(--green); }
   button.deny-btn:hover { border-color: var(--red); color: var(--red); }
+
+  #summary-table tbody tr { cursor: pointer; }
+  #summary-table tbody tr:hover { background: rgba(255,255,255,.04); }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 40px 16px; z-index: 100; overflow-y: auto;
+  }
+  .modal-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    width: 100%; max-width: 520px; padding: 20px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 14px;
+  }
+  .modal-header h2 { margin: 0; font-size: 16px; letter-spacing: .04em; text-transform: none; color: var(--text); }
+  .modal-close {
+    background: transparent; border: none; color: var(--muted); font-size: 18px;
+    cursor: pointer; line-height: 1; padding: 4px;
+  }
+  .modal-close:hover { color: var(--text); }
+  .modal-section { margin-bottom: 16px; }
+  .modal-section h3 {
+    font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;
+    margin: 0 0 8px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  .perm-list, .warn-list { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+  .perm-list li, .warn-list li { padding: 2px 0; }
+  .perm-ok { color: var(--green); }
+  .perm-warn { color: var(--yellow); }
+  .perm-none { color: var(--muted); opacity: .5; }
+  .res-row { display: flex; justify-content: space-between; font-size: 13px; padding: 2px 0; }
+  .res-row .res-value { color: var(--muted); }
+  .res-note { color: var(--muted); font-size: 11px; font-style: italic; }
+  .activity-list { font-size: 12px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+  .activity-list .verb { color: var(--accent); display: inline-block; width: 5ch; }
+  .warn-list li { color: var(--yellow); }
+  .warn-list.none li { color: var(--muted); }
+  .risk-bar-track { display: flex; gap: 2px; margin-bottom: 4px; }
+  .risk-bar-seg { flex: 1; height: 10px; border-radius: 2px; background: var(--border); }
+  .risk-bar-seg.filled-high { background: var(--red); }
+  .risk-bar-seg.filled-medium { background: var(--yellow); }
+  .risk-bar-seg.filled-low { background: var(--green); }
+  .risk-label { font-size: 13px; font-weight: 600; letter-spacing: .04em; }
 </style>
 </head>
 <body>
@@ -93,8 +139,55 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="agent-modal" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="agent-modal-title">AGENTE</h2>
+        <button class="modal-close" id="agent-modal-close" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="modal-section">
+        <h3>Permisos</h3>
+        <ul class="perm-list" id="agent-modal-perms"></ul>
+      </div>
+
+      <div class="modal-section">
+        <h3>Recursos</h3>
+        <div id="agent-modal-resources"></div>
+      </div>
+
+      <div class="modal-section">
+        <h3>Actividad</h3>
+        <div class="activity-list" id="agent-modal-activity"></div>
+      </div>
+
+      <div class="modal-section">
+        <h3>Advertencias</h3>
+        <ul class="warn-list" id="agent-modal-warnings"></ul>
+      </div>
+
+      <div class="modal-section" style="margin-bottom:0;">
+        <h3>Riesgo</h3>
+        <div class="risk-bar-track" id="agent-modal-risk-bar"></div>
+        <div class="risk-label" id="agent-modal-risk-label"></div>
+      </div>
+    </div>
+  </div>
+
 <script>
 const RISK_ORDER = { high: 3, medium: 2, low: 1 };
+
+// Heuristic mapping from observed tool_name/target text to a human capability
+// label. Inferred from what this agent has actually done, not assumed.
+const PERMISSION_RULES = [
+  { key: "read", label: "Leer archivos", match: e => /read|grep|glob/i.test(e.tool_name || "") },
+  { key: "write", label: "Escribir archivos", match: e => /write|edit/i.test(e.tool_name || "") },
+  { key: "exec", label: "Ejecutar comandos", match: e => /bash|exec|shell|command/i.test(e.tool_name || "") },
+  { key: "git", label: "Acceso a Git", match: e => /git\s/i.test(e.target || "") || /git/i.test(e.tool_name || "") },
+  { key: "net", label: "Acceso a Internet", match: e => /fetch|web|http/i.test(e.tool_name || "") || /https?:\/\//i.test(e.target || "") },
+  { key: "env", label: "Acceso a variables de entorno", warn: true,
+    match: e => /\.env|\.aws\/credentials|id_rsa|id_ed25519|\.ssh\//i.test(e.target || "") },
+];
 
 function fmtTime(ts) {
   return new Date(ts * 1000).toLocaleTimeString();
@@ -108,11 +201,14 @@ function badge(text, cls) {
   return `<span class="badge ${cls}">${text || "-"}</span>`;
 }
 
+let latestProcesses = [];
+
 async function refreshSummary() {
   const [summary, processes] = await Promise.all([
     fetch('/api/summary').then(r => r.json()),
     fetch('/api/processes').then(r => r.json()),
   ]);
+  latestProcesses = processes;
   const procByAgent = {};
   for (const p of processes) {
     if (!procByAgent[p.agent]) procByAgent[p.agent] = { cpu: 0, rss: 0 };
@@ -138,6 +234,7 @@ async function refreshSummary() {
       <td>${proc ? fmtBytes(proc.rss) : '-'}</td>
       <td>${fmtTime(row.last_seen)}</td>
     `;
+    tr.addEventListener('click', () => openAgentDetail(row.agent, riskLabel, row.risk_score));
     tbody.appendChild(tr);
   }
 }
@@ -188,6 +285,86 @@ async function refreshEvents() {
     tbody.appendChild(tr);
   }
 }
+
+function verbFor(e) {
+  if (e.event_type === 'tool_result') return e.decision === 'error' ? 'ERR' : 'DONE';
+  if (/read|grep|glob/i.test(e.tool_name || '')) return 'READ';
+  if (/write|edit/i.test(e.tool_name || '')) return 'WRITE';
+  if (/bash|exec|shell|command/i.test(e.tool_name || '')) return 'EXEC';
+  if (/fetch|web|http/i.test(e.tool_name || '')) return 'HTTP';
+  return (e.tool_name || '?').slice(0, 6).toUpperCase();
+}
+
+async function openAgentDetail(agent, riskLabel, riskScore) {
+  // Pull a larger, agent-specific slice so capability/warning detection isn't
+  // limited by the 100-row window the main activity table shows.
+  const allEvents = await fetch('/api/events?limit=500').then(r => r.json());
+  const events = allEvents.filter(e => e.agent === agent && e.event_type !== 'protocol');
+
+  document.getElementById('agent-modal-title').textContent = agent.toUpperCase();
+
+  const permsEl = document.getElementById('agent-modal-perms');
+  permsEl.innerHTML = PERMISSION_RULES.map(rule => {
+    const seen = events.some(rule.match);
+    if (!seen) return `<li class="perm-none">–&nbsp;&nbsp;${rule.label}</li>`;
+    if (rule.warn) return `<li class="perm-warn">⚠&nbsp;&nbsp;${rule.label}</li>`;
+    return `<li class="perm-ok">✓&nbsp;&nbsp;${rule.label}</li>`;
+  }).join('');
+
+  const procs = latestProcesses.filter(p => p.agent === agent);
+  const cpu = procs.reduce((s, p) => s + (p.cpu_percent || 0), 0);
+  const rss = procs.reduce((s, p) => s + (p.rss_bytes || 0), 0);
+  document.getElementById('agent-modal-resources').innerHTML = `
+    <div class="res-row"><span>CPU</span><span class="res-value">${procs.length ? cpu.toFixed(0) + '%' : '–'}</span></div>
+    <div class="res-row"><span>RAM</span><span class="res-value">${procs.length ? fmtBytes(rss) : '–'}</span></div>
+    <div class="res-row"><span>GPU</span><span class="res-value res-note">N/D (no medido aún)</span></div>
+    <div class="res-row"><span>RED ↓ / ↑</span><span class="res-value res-note">N/D (Fase 3 del roadmap)</span></div>
+  `;
+
+  const recent = events.slice(0, 10);
+  document.getElementById('agent-modal-activity').innerHTML = recent.length
+    ? recent.map(e => `${fmtTime(e.ts)}  <span class="verb">${verbFor(e)}</span>  ${e.target || e.tool_name || ''}`).join('\n')
+    : '<span class="res-note">Sin actividad registrada.</span>';
+
+  const warnEvents = events.filter(e => e.decision === 'block' || e.decision === 'ask');
+  const seenReasons = new Set();
+  const warnings = [];
+  for (const e of warnEvents) {
+    const reason = e.reason || `${e.decision === 'block' ? 'Bloqueado' : 'Pendiente'}: ${e.tool_name || ''}`;
+    if (seenReasons.has(reason)) continue;
+    seenReasons.add(reason);
+    warnings.push(reason);
+    if (warnings.length >= 5) break;
+  }
+  const warnListEl = document.getElementById('agent-modal-warnings');
+  warnListEl.className = warnings.length ? 'warn-list' : 'warn-list none';
+  warnListEl.innerHTML = warnings.length
+    ? warnings.map(w => `<li>• ${w}</li>`).join('')
+    : '<li>Sin advertencias.</li>';
+
+  const filled = riskScore >= 3 ? 8 : riskScore === 2 ? 5 : 2;
+  const fillClass = `filled-${riskLabel}`;
+  const track = document.getElementById('agent-modal-risk-bar');
+  track.innerHTML = Array.from({ length: 10 }, (_, i) =>
+    `<div class="risk-bar-seg ${i < filled ? fillClass : ''}"></div>`
+  ).join('');
+  document.getElementById('agent-modal-risk-label').textContent = riskLabel.toUpperCase();
+  document.getElementById('agent-modal-risk-label').className = `risk-label ${riskLabel}`;
+
+  document.getElementById('agent-modal').hidden = false;
+}
+
+function closeAgentDetail() {
+  document.getElementById('agent-modal').hidden = true;
+}
+
+document.getElementById('agent-modal-close').addEventListener('click', closeAgentDetail);
+document.getElementById('agent-modal').addEventListener('click', (ev) => {
+  if (ev.target.id === 'agent-modal') closeAgentDetail();
+});
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape') closeAgentDetail();
+});
 
 async function refreshAll() {
   try {

@@ -6,7 +6,9 @@ DB_PATH = DATA_DIR / "tracedaai.db"
 RULES_PATH = PROJECT_ROOT / "rules.yaml"
 
 KNOWN_AI_PROCESSES = {
-    "claude": "Claude Code",
+    # Values must match the agent labels used by hooks/proxies (e.g.
+    # hook.py's AGENT_NAME) so resource snapshots join with event rows.
+    "claude": "claude-code",
     "cursor": "Cursor",
     "ollama": "Ollama",
     "copilot": "GitHub Copilot",
