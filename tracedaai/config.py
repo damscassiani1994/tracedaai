@@ -8,11 +8,24 @@ RULES_PATH = PROJECT_ROOT / "rules.yaml"
 KNOWN_AI_PROCESSES = {
     # Values must match the agent labels used by hooks/proxies (e.g.
     # hook.py's AGENT_NAME) so resource snapshots join with event rows.
+    #
+    # Substring-matched against the OS process name, so this only works for
+    # agents that run as their own standalone process (a desktop app or a
+    # CLI) -- tools embedded inside another editor as an extension (GitHub
+    # Copilot Chat, Continue.dev, JetBrains AI) don't have a separate
+    # process to match and can't be discovered this way.
     "claude": "claude-code",
     "cursor": "Cursor",
     "ollama": "Ollama",
     "copilot": "GitHub Copilot",
     "codex": "Codex CLI",
+    "chatgpt": "ChatGPT Desktop",
+    "windsurf": "Windsurf",
+    "codeium": "Windsurf",  # legacy binary name before the Windsurf rebrand
+    "gemini": "Gemini CLI",
+    "aider": "Aider",
+    "lm studio": "LM Studio",
+    "lmstudio": "LM Studio",
 }
 
 
