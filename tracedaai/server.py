@@ -1,4 +1,4 @@
-"""FastAPI backend serving the TracedAI dashboard."""
+"""FastAPI backend serving the TraceDaAI dashboard."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from . import db
 from .config import PROJECT_ROOT
 
-app = FastAPI(title="TracedAI")
+app = FastAPI(title="TraceDaAI")
 
 DASHBOARD_DIR = PROJECT_ROOT / "dashboard"
 

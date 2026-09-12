@@ -1,4 +1,4 @@
-# TracedAI policy rules — evaluated top to bottom, first match wins.
+# TraceDaAI policy rules — evaluated top to bottom, first match wins.
 # action: allow | ask | block
 # risk:   low | medium | high
 #

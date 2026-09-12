@@ -24,7 +24,7 @@ from .notifier import notify
 from .policy import PolicyEngine, ToolEvent, summarize_target
 
 BLOCK_MESSAGE = (
-    "Blocked by TracedAI policy: {reason}. "
+    "Blocked by TraceDaAI policy: {reason}. "
     "Approve via `tracedaai approve <event_id>` and retry if this was intentional."
 )
 ASK_APPROVAL_WINDOW_SECONDS = 300.0
@@ -121,7 +121,7 @@ class McpProxy:
                 db.create_approval(tool_name, target)
                 decision.action = "block"  # blocked until approved; retry after approving
                 notify(
-                    "TracedAI — Approval needed",
+                    "TraceDaAI — Approval needed",
                     f"[{self.server_name}] {tool_name}: {target}",
                 )
                 already_notified = True
@@ -134,7 +134,7 @@ class McpProxy:
 
         if decision.action == "block" and not already_notified:
             notify(
-                "TracedAI — Blocked",
+                "TraceDaAI — Blocked",
                 f"[{self.server_name}] {tool_name}: {decision.reason or target}",
             )
 

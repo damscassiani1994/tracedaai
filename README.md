@@ -1,4 +1,4 @@
-# TracedAI
+# TraceDaAI
 
 Un "AI Firewall / AI Permission Manager" personal: audita y controla qué hacen
 los agentes de IA (Claude Code, Cursor, Copilot, servidores MCP, etc.) en tu
@@ -7,14 +7,14 @@ en un dashboard único.
 
 ## Modelo de seguridad y límites (léelo antes de confiar en esto)
 
-TracedAI Fase 1 es **cooperativo**, no un enforcement real a nivel de sistema
+TraceDaAI Fase 1 es **cooperativo**, no un enforcement real a nivel de sistema
 operativo. Funciona interceptando protocolos que el propio agente respeta
 voluntariamente: los hooks de Claude Code (`PreToolUse`/`PostToolUse`) y el
 tráfico JSON-RPC de MCP que pasa por el proxy. Esto significa que:
 
 - Un proceso que no pase por esos dos puntos (un script arbitrario, un
   binario que ignore hooks, tráfico MCP que no pase por el proxy) **no está
-  controlado** por TracedAI.
+  controlado** por TraceDaAI.
 - No hay verificación de que el propio Claude Code respete la decisión del
   hook — se apoya en el contrato documentado de `hookSpecificOutput`.
 - El enforcement real e infalible (bloquear a nivel de kernel el acceso a un
@@ -69,7 +69,7 @@ Cada llamada (pre y post) queda registrada en el dashboard.
 ### Proxy MCP (envuelve cualquier servidor MCP stdio)
 
 En la configuración MCP de tu cliente, en vez de apuntar directamente al
-comando del servidor real, apúntalo a TracedAI:
+comando del servidor real, apúntalo a TraceDaAI:
 
 ```bash
 tracedaai proxy --name mi-servidor -- <comando original> [args...]
@@ -90,7 +90,7 @@ Copilot, Codex) para que el dashboard muestre uso de recursos por agente.
 ### Notificaciones de escritorio
 
 Cada vez que una acción se bloquea o se crea una aprobación pendiente,
-TracedAI envía una notificación nativa del sistema (macOS vía `osascript`,
+TraceDaAI envía una notificación nativa del sistema (macOS vía `osascript`,
 Linux vía `notify-send`; Windows aún no implementado). Prueba que funcionen:
 
 ```bash

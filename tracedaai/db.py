@@ -1,4 +1,4 @@
-"""SQLite storage for TracedAI: audit events and resource snapshots."""
+"""SQLite storage for TraceDaAI: audit events and resource snapshots."""
 import contextlib
 import json
 import sqlite3

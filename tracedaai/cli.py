@@ -61,7 +61,7 @@ def cmd_init_hooks(_args) -> int:
 def cmd_notify_test(_args) -> int:
     from .notifier import notify
 
-    notify("TracedAI", "Test notification — if you see this, desktop notifications work.")
+    notify("TraceDaAI", "Test notification — if you see this, desktop notifications work.")
     print("Notification sent (check your notification center).")
     return 0
 
@@ -89,7 +89,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_monitor.add_argument("--interval", type=float, default=5.0)
     p_monitor.set_defaults(func=cmd_monitor)
 
-    p_proxy = sub.add_parser("proxy", help="Wrap a real MCP server with the TracedAI firewall")
+    p_proxy = sub.add_parser("proxy", help="Wrap a real MCP server with the TraceDaAI firewall")
     p_proxy.add_argument("--name", required=True, help="Label for this MCP server in logs/dashboard")
     p_proxy.add_argument("command", nargs=argparse.REMAINDER, help="-- <original command> [args...]")
     p_proxy.set_defaults(func=cmd_proxy)

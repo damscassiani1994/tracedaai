@@ -67,7 +67,7 @@ def handle_pre() -> int:
     )
 
     if decision.action == "block":
-        notify("TracedAI — Blocked", f"{tool_name}: {decision.reason or target}")
+        notify("TraceDaAI — Blocked", f"{tool_name}: {decision.reason or target}")
 
     _emit({
         "hookSpecificOutput": {
