@@ -62,9 +62,11 @@
 
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,.6);
-    display: flex; align-items: flex-start; justify-content: center;
+    align-items: flex-start; justify-content: center;
     padding: 40px 16px; z-index: 100; overflow-y: auto;
+    display: none;
   }
+  .modal-overlay:not([hidden]) { display: flex; }
   .modal-card {
     background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
     width: 100%; max-width: 520px; padding: 20px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
