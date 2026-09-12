@@ -2,13 +2,28 @@
 name = "tracedaai"
 version = "0.1.0"
 description = "AI Control Center / AI Firewall for personal machines — MCP proxy, agent hooks, activity dashboard"
+readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "damaso", email = "damscassiani1994@gmail.com" },
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+]
 dependencies = [
     "fastapi>=0.115",
     "uvicorn>=0.30",
     "pyyaml>=6.0",
     "psutil>=6.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/damscassiani1994/tracedaai"
+Repository = "https://github.com/damscassiani1994/tracedaai"
 
 [project.scripts]
 tracedaai = "tracedaai.cli:main"
