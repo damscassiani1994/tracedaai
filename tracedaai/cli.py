@@ -49,12 +49,12 @@ def cmd_hook(args) -> int:
 
 
 def cmd_init_hooks(_args) -> int:
-    from .hook import HOOK_SNIPPET
+    from .hook import hook_snippet
 
     print("Add this to your Claude Code settings.json (project .claude/settings.json")
     print("or the global ~/.claude/settings.json) under the existing config, merging")
     print("with any hooks you already have:\n")
-    print(json.dumps(HOOK_SNIPPET, indent=2))
+    print(json.dumps(hook_snippet(), indent=2))
     return 0
 
 

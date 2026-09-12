@@ -12,6 +12,7 @@ back to the model. PostToolUse can only observe/log — the action already ran.
 from __future__ import annotations
 
 import json
+import shlex
 import sys
 from typing import Any
 
@@ -97,23 +98,34 @@ def handle_post() -> int:
     return 0
 
 
-HOOK_SNIPPET = {
-    "hooks": {
-        "PreToolUse": [
-            {
-                "matcher": "*",
-                "hooks": [
-                    {"type": "command", "command": "python3 -m tracedaai.cli hook pre"}
-                ],
-            }
-        ],
-        "PostToolUse": [
-            {
-                "matcher": "*",
-                "hooks": [
-                    {"type": "command", "command": "python3 -m tracedaai.cli hook post"}
-                ],
-            }
-        ],
+def hook_snippet() -> dict:
+    """Build the settings.json hooks snippet using the *current* interpreter.
+
+    A bare "python3" only works if the venv happens to be active when Claude
+    Code runs the hook, which usually isn't the case. sys.executable is the
+    absolute path to whichever interpreter is running this code -- when
+    installed via `pip install -e .` inside a venv, that's the venv's own
+    python3, so the generated command resolves correctly regardless of cwd
+    or activation state.
+    """
+    python = shlex.quote(sys.executable)
+    return {
+        "hooks": {
+            "PreToolUse": [
+                {
+                    "matcher": "*",
+                    "hooks": [
+                        {"type": "command", "command": f"{python} -m tracedaai.cli hook pre"}
+                    ],
+                }
+            ],
+            "PostToolUse": [
+                {
+                    "matcher": "*",
+                    "hooks": [
+                        {"type": "command", "command": f"{python} -m tracedaai.cli hook post"}
+                    ],
+                }
+            ],
+        }
     }
-}
