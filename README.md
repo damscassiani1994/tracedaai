@@ -65,6 +65,16 @@ tracedaai monitor --interval 5
 Registra snapshots de CPU/RAM de procesos conocidos (Claude, Cursor, Ollama,
 Copilot, Codex) para que el dashboard muestre uso de recursos por agente.
 
+### Notificaciones de escritorio
+
+Cada vez que una acción se bloquea o se crea una aprobación pendiente,
+TracedAI envía una notificación nativa del sistema (macOS vía `osascript`,
+Linux vía `notify-send`; Windows aún no implementado). Prueba que funcionen:
+
+```bash
+tracedaai notify-test
+```
+
 ## Reglas (`rules.yaml`)
 
 Reglas evaluadas en orden, la primera que matchea gana. Ver los ejemplos ya

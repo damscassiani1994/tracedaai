@@ -16,6 +16,7 @@ import sys
 from typing import Any
 
 from . import db
+from .notifier import notify
 from .policy import PolicyEngine, ToolEvent, summarize_target
 
 AGENT_NAME = "claude-code"
@@ -64,6 +65,9 @@ def handle_pre() -> int:
         risk=decision.risk, reason=decision.reason,
         request_id=payload.get("session_id"), raw=payload,
     )
+
+    if decision.action == "block":
+        notify("TracedAI — Blocked", f"{tool_name}: {decision.reason or target}")
 
     _emit({
         "hookSpecificOutput": {

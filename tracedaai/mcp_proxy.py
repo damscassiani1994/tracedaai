@@ -20,6 +20,7 @@ import sys
 from typing import Optional
 
 from . import db
+from .notifier import notify
 from .policy import PolicyEngine, ToolEvent, summarize_target
 
 BLOCK_MESSAGE = (
@@ -109,6 +110,7 @@ class McpProxy:
         target = summarize_target(event)
         decision = self.policy.evaluate(event)
 
+        already_notified = False
         if decision.action == "ask":
             approved = db.check_approval(tool_name, target, ASK_APPROVAL_WINDOW_SECONDS)
             if approved == "approved":
@@ -118,12 +120,23 @@ class McpProxy:
             else:
                 db.create_approval(tool_name, target)
                 decision.action = "block"  # blocked until approved; retry after approving
+                notify(
+                    "TracedAI — Approval needed",
+                    f"[{self.server_name}] {tool_name}: {target}",
+                )
+                already_notified = True
 
         event_id = db.log_event(
             source="mcp_proxy", event_type="tool_call", agent=self.server_name,
             tool_name=tool_name, target=target, decision=decision.action,
             risk=decision.risk, reason=decision.reason, request_id=str(req_id), raw=msg,
         )
+
+        if decision.action == "block" and not already_notified:
+            notify(
+                "TracedAI — Blocked",
+                f"[{self.server_name}] {tool_name}: {decision.reason or target}",
+            )
 
         if decision.action == "block":
             error_response = {

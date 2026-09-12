@@ -58,6 +58,14 @@ def cmd_init_hooks(_args) -> int:
     return 0
 
 
+def cmd_notify_test(_args) -> int:
+    from .notifier import notify
+
+    notify("TracedAI", "Test notification — if you see this, desktop notifications work.")
+    print("Notification sent (check your notification center).")
+    return 0
+
+
 def cmd_approve(args) -> int:
     db.resolve_approval(args.approval_id, "approved" if args.action == "approve" else "denied")
     print(f"Approval {args.approval_id} -> {args.action}")
@@ -92,6 +100,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_init_hooks = sub.add_parser("init-hooks", help="Print settings.json snippet to wire up Claude Code hooks")
     p_init_hooks.set_defaults(func=cmd_init_hooks)
+
+    p_notify_test = sub.add_parser("notify-test", help="Send a test desktop notification")
+    p_notify_test.set_defaults(func=cmd_notify_test)
 
     p_approve = sub.add_parser("approve", help="Resolve a pending 'ask' decision")
     p_approve.add_argument("approval_id", type=int)
