@@ -337,7 +337,13 @@ document.getElementById("lang-en").addEventListener("click", () => setLang("en")
 document.getElementById("lang-es").addEventListener("click", () => setLang("es"));
 
 function fmtTime(ts) {
-  return new Date(ts * 1000).toLocaleTimeString();
+  const locale = currentLang === "es" ? "es-ES" : "en-US";
+  const d = new Date(ts * 1000);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const date = currentLang === "es" ? `${dd}/${mm}/${yyyy}` : `${mm}/${dd}/${yyyy}`;
+  return `${date} ${d.toLocaleTimeString(locale)}`;
 }
 function fmtBytes(b) {
   if (!b) return "-";

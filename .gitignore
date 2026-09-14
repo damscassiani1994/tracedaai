@@ -14,3 +14,7 @@ data/*.bak
 # Machine-specific Claude Code hook wiring (hardcodes an absolute venv path) --
 # generate your own locally with `tracedaai init-hooks`.
 .claude/
+
+# Same reason, for Cursor's native hooks -- generate locally with
+# `tracedaai init-cursor-hooks`.
+.cursor/
