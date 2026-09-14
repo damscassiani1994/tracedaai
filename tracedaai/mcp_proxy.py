@@ -195,3 +195,23 @@ async def _stdin_reader() -> asyncio.StreamReader:
 def run_proxy(server_name: str, command: list[str]) -> int:
     proxy = McpProxy(server_name, command)
     return asyncio.run(proxy.run())
+
+
+def cursor_mcp_snippet(agent_name: str, command: list[str], server_key: Optional[str] = None) -> dict:
+    """Build a .cursor/mcp.json entry that wraps `command` with the TraceDaAI proxy.
+
+    Uses the *current* interpreter (sys.executable) for the same reason
+    hook.hook_snippet() does: a bare "python3" only resolves correctly if the
+    venv happens to be active when Cursor launches the server, which it
+    usually isn't. Args are passed as a literal list (not a shell string), so
+    there's no quoting to get wrong.
+    """
+    key = server_key or agent_name.lower().replace(" ", "-")
+    return {
+        "mcpServers": {
+            key: {
+                "command": sys.executable,
+                "args": ["-m", "tracedaai.cli", "proxy", "--name", agent_name, "--", *command],
+            }
+        }
+    }

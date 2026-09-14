@@ -1,23 +1,31 @@
 """FastAPI backend serving the TraceDaAI dashboard."""
 from __future__ import annotations
 
+import os
+import threading
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import db
+from . import db, monitor
 from .config import PROJECT_ROOT
 
 app = FastAPI(title="TraceDaAI")
 
 DASHBOARD_DIR = PROJECT_ROOT / "dashboard"
 
+MONITOR_INTERVAL_ENV = "TRACEDAAI_MONITOR_INTERVAL"
+MONITOR_DISABLE_ENV = "TRACEDAAI_DISABLE_MONITOR"
+
 
 @app.on_event("startup")
 def _startup() -> None:
     db.init_db()
+    if not os.environ.get(MONITOR_DISABLE_ENV):
+        interval = float(os.environ.get(MONITOR_INTERVAL_ENV, "5.0"))
+        threading.Thread(target=monitor.run_loop, kwargs={"interval": interval}, daemon=True).start()
 
 
 @app.get("/api/events")
